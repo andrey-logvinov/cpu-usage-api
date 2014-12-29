@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="generator" content=
+    "HTML Tidy for HTML5 (experimental) for Mac OS X https://github.com/w3c/tidy-html5/tree/c63cc39">
+    <title>
+      Web Application CPU Utilization API
+    </title>
+    <meta charset='utf-8'>
+    <script src='http://www.w3.org/Tools/respec/respec-w3c-common' async=""
+    class='remove'>
+</script>
+    <script class='remove'>
+/*stops tidy screwing things up*/
+    var respecConfig = {
+        specStatus: "unofficial",
+        shortName: "cpu-usage-api",
+        editors: [{
+            name: "Andrey Logvinov",
+            url: "mailto:alogvinov@yandex-team.ru",
+            company: "Yandex"
+        }],
+        edDraftURI: "http://andrey-logvinov.github.io/cpu-usage-api/",
+        wg: "Device APIs Working Group",
+        wgURI: "http://www.w3.org/2009/dap/",
+        wgPublicList: "public-device-apis",
+        wgPatentURI: "http://www.w3.org/2004/01/pp-impl/43696/status",
+        otherLinks: [{
+            key: 'Repository',
+            data: [{
+                value: 'We are on Github.',
+                href: 'https://github.com/andrey-logvinov/cpu-usage-api'
+            }, {
+                value: 'File a bug.',
+                href: 'https://github.com/andrey-logvinov/cpu-usage-api/issues'
+            }, {
+                value: 'Commit history.',
+                href: 'https://github.com/andrey-logvinov/cpu-usage-api/commits/gh-pages'
+            }]
+        }, {
+            key: "Implementation status",
+            data: [{
+                value: "Gecko",
+                href: ""
+            }, {
+                value: "Blink",
+                href: ""
+            }]
+        }],
+    };
+    </script>
+  </head>
+  <body>
+    <section id='abstract'>
+      <p>
+        This document specifies an API that allows web applications to obtain
+        an estimation of user agent CPU utilization they cause, and also
+        browser-specific hints whether their CPU utilization is higher than
+        desired.
+      </p>
+    </section>
+    <section id='sotd'>
+      <p>
+        Implementors need to be aware that this specification is extremely
+        unstable. <strong>Implementors who are not taking part in the
+        discussions will find the specification changing out from under them in
+        incompatible ways.</strong> Vendors interested in implementing this
+        specification before it eventually reaches the Candidate Recommendation
+        phase should <a href=
+        "https://github.com/andrey-logvinov/cpu-usage-api/issues">subscribe to
+        the repository on GitHub</a> and take part in the discussions.
+      </p>
+    </section>
+    <section class='informative'>
+      <h2>Motivation</h2>
+      <p>
+        As web applications can consume significant amounts of computation
+        resources e.g. by executing Javascript code (possibly in multiple
+        threads using Web Workers), it becomes relevant whether they create
+        an undiserably high strain on the system running the browser. It can be
+        especially critical for mobile devices running on batteries as high
+        CPU utilization dramatically decreases autonomous runtime barring the
+        user not only from using the application but also from using the device
+        at all.
+      </p>
+      <p>
+        A proactive web application can take into account its CPU utilization
+        level and throttle it cooperatively in case it becomes too high. In
+        addition to quantitative information about CPU utilization, a browser
+        can also provide qualitative hints to the application about whether the
+        current CPU utilization level is too high so that the application
+        doesn't have to analyze CPU utilization numerical values. Also, when
+        producing such hints, a browser can take into account system state
+        parameters such as whether the charger is connected.
+      </p>
+    </section>
+    <section id="examples" class="informative">
+      <h2>Example</h2>
+      <pre class="example highlight">
+navigator.getApplicationCPU().then(function(cpu) {
+
+  console.log("CPU utilization: " + cpu.level * 100 + "%");
+  console.log("CPU utilization is " + (cpu.high ? "high" : "normal"));
+
+  cpu.addEventListener("levelchange", function() {
+    console.log("CPU utilization changed: " + cpu.level * 100 + "%");
+  });
+
+  cpu.AddEventListener("highchange", function() {
+    console.log("CPU utilization changed, is now " +
+        (cpu.high ? "high" : "normal"));
+  });
+
+}, function() {
+  console.log("CPU utilization information is not available");
+});
+</pre>
+    </section>
+    <section>
+      <h2>CPU utilization information</h2>
+      <p>
+        Information about CPU utilization of a web application can be expressed
+        either quantitatively (amount of CPU consumed) or qualitatively (within
+        or beyond <a>user agent</a>-dependent limits). Quantitative information
+        can allow a web application to evaluate an impact of its activities on
+        CPU and battery utilization, while qualitative information can allow web
+        applications to react to situations when <a>user agent</a> deems web
+        application's CPU utilization inacceptably high.
+      </p>
+      <p>
+        As web applications sharing the same <a>user agent</a> are not
+        necessarily as distinctly separated in terms of resource consumption as
+        native operating system applications, as e.g. in case when multiple web
+        applications are sharing <a>user agent</a>'s operating system processes
+        and/or threads, it should be expected that CPU utilization measure is
+        only an estimation of the actual value whose accuracy is <a>user agent
+        </a>-dependent.
+      </p>
+      <p>
+        When deciding to inform a web application about high CPU utilization
+        level, <a>user agent</a> may take into account possible transient nature
+        of elevated CPU consumption and avoid excessive amounts of notification
+        messages, e.g. by only issuing a notification when the CPU utilization
+        is consistently high during a set time interval.
+      </p>
+      <div class="note">
+        <p>
+          This specification deals specifically with attribution of CPU
+          utilization to individual web applications rather than providing
+          access to the the overall level of CPU utilization of the user agent
+          or the underlying operating system.
+        </p>
+      </div>
+    </section>
+    <section>
+      <h2>CPU utilization attribution granularity</h2>
+      <p>
+        CPU utilization is attributed to the web application as a whole, i.e.
+        it is calculated as an estimation of total utilization level of the
+        application's <a>top-level browsing context</a> and all its directly and
+        indirectly <a>nested browsing context</a>s.
+      </p>
+      <div class="note">
+        <p>
+          The reason behind this decision is that CPU utilization level
+          information can also be used by the <a>user agent</a> to notify the
+          user about a problematic application and/or preemptively terminate the
+          application on behalf of the user to avoid excessive CPU consumption
+          when the device is running on battery. It makes no sense either to
+          notify the user about particular <a>browsing context</a> within the
+          application or to terminate the web application partially. Also, it
+          may be significantly more challenging to implement a document-level
+          CPU utilization measurement in the user agent than a window/tab-level
+          measurement.
+        </p>
+      </div>
+      <p>
+        To avoid confusion with CPU utilization attribution, <a>user agent</a>
+        must only expose CPU utilization information to the <a>top-level
+        browsing context</a>'s <a>active document</a>.
+      </p>
+    </section>
+    <section>
+      <h2>Extension to the <a><code>Navigator</code></a> interface</h2>
+      <dl title="partial interface Navigator" class="idl">
+        <dt>Promise&lt;ApplicationCPU&gt; getApplicationCPU()</dt>
+        <dd>
+          Returns promise of <a><code>ApplicationCPU</code></a> object. <a>User
+          agent</a> must resolve this promise if the requesting <a>Document</a>
+          is the <a>active document</a> of a <a>top-level browsing context</a>,
+          otherwise <a>user agent</a> must reject this promise. Also, <a>user
+          agent</a> must reject this promise if it will not in principle provide
+          CPU utilization information, e.g. when forbidden from doing so by a
+          security setting.
+        </dd>
+      </dl>
+    </section>
+    <section>
+      <h2>The <dfn><code>ApplicationCPU</code></dfn> interface</h2>
+      <dl title="interface CPUUsage : EventTarget" class="idl">
+        <dt>readonly attribute double level</dt>
+        <dd>
+          Current CPU utilization level, fraction of a single processor core. On
+          a multiprocessor/multicore system, this value can be in range of zero
+          to number of processors/cores. If <a>user agent</a> cannot provide
+          this information, this attribute must be set to <code>NaN</code>.
+        </dd>
+        <dt>attribute EventHandler? onlevelchange</dt>
+        <dd>
+          Event triggered on CPU utilization level change. <a>User agent</a>
+          must dispatch this event whenever the value of <code>level</code>
+          attribute changes.
+        </dd>
+        <dt>readonly attribute boolean high</dt>
+        <dd>
+          Value of <code>true</code> indicates high CPU utilization level, as
+          determined by the user agent. If <a>user agent</a> cannot provide this
+          information, this attribute must be set to <code>false</code>.
+        </dd>
+        <dt>attribute EventHandler? onhighchange</dt>
+        <dd>
+          Event triggered when CPU utilization changes from normal to high or
+          vice versa. <a>User agent</a> must dispatch this event whenever the
+          value of <code>high</code> attribute changes.
+        </dd>
+      </dl>
+      <p>
+        <a>User agent</a> can provide either quantitative CPU utilization
+        information (<code>level</code> attribute and <code>onlevelchange</code>
+        event), or qualitative information (<code>high</code> attribute and
+        <code>onhighchange</code> event), or both.
+      </p>
+    </section>
+    <section>
+      <h2>Dependencies</h2>
+      <p>
+        The following concepts and interfaces are defined in [[!HTML]]:
+      </p>
+      <ul>
+        <li>
+          <a href=
+          "http://html.spec.whatwg.org/multipage/dom.html#document">
+          <dfn><code>Document</code></dfn></a>
+        </li>
+        <li>
+          <a href=
+          "http://html.spec.whatwg.org/multipage/browsers.html#browsing-context">
+          <dfn>browsing context</dfn></a>
+        </li>
+        <li>
+          <a href=
+          "http://html.spec.whatwg.org/multipage/browsers.html#top-level-browsing-context">
+          <dfn>top-level browsing context</dfn></a>
+        </li>
+        <li>
+          <a href=
+          "http://html.spec.whatwg.org/multipage/browsers.html#nested-browsing-context">
+          <dfn>nested browsing context</dfn></a>
+        </li>
+        <li>
+          <a href=
+          "https://html.spec.whatwg.org/multipage/browsers.html#active-document">
+          <dfn>active document</dfn></a>
+        </li>
+      </ul>
+    </section>
+    <section id="conformance">
+      <p>
+        This specification defines conformance criteria for a single product: a
+        <dfn>user agent</dfn> that implements the interfaces that it contains.
+      </p>
+      <p>
+        A <a>user agent</a> MUST implement the APIs defined in this
+        specification in a manner that conforms to the <a href=
+        "http://heycam.github.io/webidl/#ecmascript-binding">ECMAScript
+        Bindings</a> defined in [[!WEBIDL]].
+      </p>
+    </section>
+  </body>
+</html>
