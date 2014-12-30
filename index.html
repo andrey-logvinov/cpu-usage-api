@@ -198,14 +198,14 @@ navigator.getApplicationCPU().then(function(cpu) {
     <section>
       <h2>The <dfn><code>ApplicationCPU</code></dfn> interface</h2>
       <dl title="interface ApplicationCPU : EventTarget" class="idl">
-        <dt>readonly attribute double level</dt>
+        <dt>readonly attribute unrestricted double level</dt>
         <dd>
           Current CPU utilization level, fraction of a single processor core. On
           a multiprocessor/multicore system, this value can be in range of zero
           to number of processors/cores. If <a>user agent</a> cannot provide
           this information, this attribute must be set to <code>NaN</code>.
         </dd>
-        <dt>attribute EventHandler? onlevelchange</dt>
+        <dt>attribute EventHandler onlevelchange</dt>
         <dd>
           Event triggered on CPU utilization level change. <a>User agent</a>
           must dispatch this event whenever the value of <code>level</code>
@@ -217,7 +217,7 @@ navigator.getApplicationCPU().then(function(cpu) {
           determined by the user agent. If <a>user agent</a> cannot provide this
           information, this attribute must be set to <code>false</code>.
         </dd>
-        <dt>attribute EventHandler? onhighchange</dt>
+        <dt>attribute EventHandler onhighchange</dt>
         <dd>
           Event triggered when CPU utilization changes from normal to high or
           vice versa. <a>User agent</a> must dispatch this event whenever the
