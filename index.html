@@ -97,7 +97,7 @@
     <section id="examples" class="informative">
       <h2>Example</h2>
       <pre class="example highlight">
-navigator.getApplicationCPU().then(function(cpu) {
+navigator.getContextCPU().then(function(cpu) {
 
   console.log("CPU utilization: " + cpu.level * 100 + "%");
   console.log("CPU utilization is " + (cpu.high ? "high" : "normal"));
@@ -156,9 +156,8 @@ navigator.getApplicationCPU().then(function(cpu) {
       <h2>CPU utilization attribution granularity</h2>
       <p>
         CPU utilization is attributed to the web application as a whole, i.e.
-        it is calculated as an estimation of total utilization level of the
-        application's <a>top-level browsing context</a> and all its directly and
-        indirectly <a>nested browsing context</a>s.
+        it is calculated as an estimation of the total CPU usage of all
+        simulaneously loaded web pages that make up the application.
       </p>
       <div class="note">
         <p>
@@ -175,33 +174,49 @@ navigator.getApplicationCPU().then(function(cpu) {
         </p>
       </div>
       <p>
+        For the purposes of this specification <dfn>common browsing context set
+        </dfn> of a <a>top-level browsing context</a> is defined as the union of
+        the <a>top-level browsing context</a> itself and all members of its <a>
+        list of the descendant browsing contexts</a>.
+      </p>
+      <div class="note">
+        <p>
+          <a>Top-level browsing context</a> of a web application represents the
+          browser window or tab where the application is presented to the user,
+          while its <a>common browsing context set</a> represents all nested
+          pages within that window or tab, including the top-level page itself.
+        </p>
+      </div>
+      <p>
         To avoid confusion with CPU utilization attribution, <a>user agent</a>
         must only expose CPU utilization information to the <a>top-level
-        browsing context</a>'s <a>active document</a>. For non-top-level
-        browsing contexts, <a>user agent</a> must behave in the same way
+        browsing context</a>'s <a>active document</a> and this information must
+        reflect total CPU utilization of <a>common browsing context set</a> for
+        that top-level context.
       </p>
     </section>
     <section>
       <h2>Extension to the <a><code>Navigator</code></a> interface</h2>
       <dl title="partial interface Navigator" class="idl">
-        <dt>Promise&lt;ApplicationCPU&gt; getApplicationCPU()</dt>
+        <dt>Promise&lt;ContextCPU&gt; getContextCPU()</dt>
         <dd>
-          Returns promise of <a><code>ApplicationCPU</code></a> object. <a>User
-          agent</a> must resolve this promise with an <a><code>ApplicationCPU
-          </code></a> object if the requesting <a>Document</a> is the <a>active
+          Returns promise of <a><code>ContextCPU</code></a> object. <a>User
+          agent</a> must resolve this promise with an <a><code>ContextCPU</code>
+          </a> object if the requesting <a>Document</a> is the <a>active
           document</a> in a <a>top-level browsing context</a>, otherwise <a>user
           agent</a> must reject this promise.
         </dd>
       </dl>
     </section>
     <section>
-      <h2>The <dfn><code>ApplicationCPU</code></dfn> interface</h2>
-      <dl title="interface ApplicationCPU : EventTarget" class="idl">
+      <h2>The <dfn><code>ContextCPU</code></dfn> interface</h2>
+      <dl title="interface ContextCPU : EventTarget" class="idl">
         <dt>readonly attribute double level</dt>
         <dd>
-          Current CPU utilization level, fraction of a single processor core. On
-          a multiprocessor/multicore system, this value can be in range of zero
-          to number of processors/cores. If <a>user agent</a> cannot or does not
+          Current CPU utilization level attributed to the current <a>common
+          browsing context set</a>, fraction of a single processor core. On a
+          multiprocessor/multicore system, this value can be in range of zero to
+          number of processors/cores. If <a>user agent</a> cannot or does not
           wish to provide this information, this attribute must be set to the
           default value of <code>0</code>.
         </dd>
@@ -213,10 +228,11 @@ navigator.getApplicationCPU().then(function(cpu) {
         </dd>
         <dt>readonly attribute boolean high</dt>
         <dd>
-          Value of <code>true</code> indicates high CPU utilization level, as
-          determined by the user agent. If <a>user agent</a> cannot or does not
-          wish to provide this information, this attribute must be set to the
-          default value of <code>false</code>.
+          Value of <code>true</code> indicates high CPU utilization level for
+          the current <a>common browsing context set</a>, as determined by the
+          user agent. If <a>user agent</a> cannot or does not wish to provide
+          this information, this attribute must be set to the default value of
+          <code>false</code>.
         </dd>
         <dt>attribute EventHandler onhighchange</dt>
         <dd>
@@ -255,8 +271,8 @@ navigator.getApplicationCPU().then(function(cpu) {
         </li>
         <li>
           <a href=
-          "http://html.spec.whatwg.org/multipage/browsers.html#nested-browsing-context">
-          <dfn>nested browsing context</dfn></a>
+          "http://html.spec.whatwg.org/multipage/browsers.html#list-of-the-descendant-browsing-contexts">
+          <dfn>list of the descendant browsing contexts</dfn></a>
         </li>
         <li>
           <a href=
